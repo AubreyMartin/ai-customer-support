@@ -1,20 +1,20 @@
-import os
-from dotenv import load_dotenv
-from openai import OpenAI
+from fastapi import FastAPI
+from pydantic import BaseModel
 
-# Load variables from .env
-load_dotenv()
+app = FastAPI()
 
-# Create OpenAI client
-client = OpenAI(
-    api_key=os.getenv("OPENAI_API_KEY")
-)
 
-# Send a request to the AI
-response = client.responses.create(
-    model="gpt-5",
-    input="Explain what a frontend developer does in one simple sentence."
-)
+class ChatRequest(BaseModel):
+    message: str
 
-# Print the AI's response
-print(response.output_text)
+
+@app.get("/")
+def home():
+    return {"message": "AI Customer Support API is running!"}
+
+
+@app.post("/chat")
+def chat(request: ChatRequest):
+    return {
+        "reply": f"You said: {request.message}"
+    }
