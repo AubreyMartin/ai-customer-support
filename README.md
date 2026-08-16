@@ -385,7 +385,7 @@ A live demo and screenshots will be added after the chatbot UI and deployment ar
 
 **Aubrey Martin**
 
-Frontend Developer focused on React, JavaScript, and modern web application development.
+Software engineer focused on React, JavaScript, and modern web application development.
 
 ---
 
