@@ -83,16 +83,19 @@ The project focuses on practical AI integration, rather than simply calling an A
 - [x] Local end-to-end request flow
 - [x] Environment variable setup
 - [x] API key protection with `.gitignore`
+- [x] Professional chatbot UI
+- [x] Conversation history
+- [x] Loading states
+- [x] Error handling
+- [x] Responsive design
+- [x] Auto-scroll
+- [x] Clear chat
+- [x] Environment variable setup
 
 ### In Progress
 
-- [ ] Professional chatbot UI
-- [ ] Conversation history
-- [ ] Loading states
-- [ ] Error handling
 - [ ] Real OpenAI response integration
 - [ ] Customer-support system prompt
-- [ ] Responsive design
 - [ ] Deployment
 
 ---
@@ -347,6 +350,9 @@ This project covers practical concepts including:
 - [x] FastAPI backend
 - [x] React frontend
 - [x] Frontend/backend communication
+- [x] Customer support chat interface
+- [x] Loading and error handling
+- [x] Conversation management
 
 ### Phase 2 — AI Integration
 
