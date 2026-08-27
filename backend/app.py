@@ -8,16 +8,15 @@ from pydantic import BaseModel
 
 load_dotenv()
 
-client = OpenAI(
-    api_key=os.getenv("OPENAI_API_KEY")
-)
-
 app = FastAPI()
 
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=[
+        "http://localhost:5173",
+        "https://ai-customer-support-seven-omega.vercel.app",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -36,6 +35,16 @@ def home():
 @app.post("/chat")
 def chat(request: ChatRequest):
     try:
+        api_key = os.getenv("OPENAI_API_KEY")
+
+        if not api_key:
+            raise HTTPException(
+                status_code=503,
+                detail="AI service is not configured yet."
+            )
+
+        client = OpenAI(api_key=api_key)
+
         response = client.responses.create(
             model="gpt-5-mini",
             instructions="""
@@ -63,6 +72,9 @@ def chat(request: ChatRequest):
         return {
             "reply": response.output_text
         }
+
+    except HTTPException:
+        raise
 
     except RateLimitError:
         raise HTTPException(
