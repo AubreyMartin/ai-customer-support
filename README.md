@@ -359,17 +359,17 @@ This project covers practical concepts including:
 - [ ] OpenAI API integration
 - [ ] Server-side AI requests
 - [ ] AI response handling
-- [ ] Error handling
+- [x] Error handling
 - [ ] Secure API configuration
 
 ### Phase 3 — Chatbot Experience
 
-- [ ] Conversation history
-- [ ] User/AI message bubbles
-- [ ] Loading indicator
+- [x] Conversation history
+- [x] User/AI message bubbles
+- [x] Loading indicator
 - [ ] System prompt
 - [ ] Customer-support context
-- [ ] Clear conversation
+- [x] Clear conversation
 
 ### Phase 4 — Production
 
