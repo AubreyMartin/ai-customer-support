@@ -71,7 +71,7 @@ function App() {
   return (
     <div className="chat-app">
       <header className="chat-header">
-        <h1>🤖 AI Customer Support</h1>
+        <h1> ◈ AI Customer Support</h1>
         <div className="status">● Online</div>
 
         <button onClick={clearChat} className="clear-button">
