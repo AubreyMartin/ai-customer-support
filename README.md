@@ -1,36 +1,63 @@
 # 🤖 AI Customer Support Chatbot
 
-A full-stack AI customer support chatbot built with **React, Python, FastAPI, and the OpenAI API**.
+A full-stack AI customer support chatbot built with **React, Python,
+FastAPI, and the OpenAI API**.
 
-This project demonstrates how a modern frontend application can communicate with a Python backend and securely integrate with an AI service.
+This project demonstrates how a modern frontend application can
+communicate with a Python backend, securely integrate with an AI
+service, and be deployed as a full-stack application.
 
-> 🚧 This project is actively being developed step-by-step.
+> 🚧 The application is deployed. Live AI-generated responses require a
+> valid OpenAI API key with available API credits.
 
 ---
 
 ## 🎯 Project Goal
 
-The goal is to build a customer support chatbot while understanding the complete application flow:
-
 ```text
-React Frontend
-      │
-      │ POST /chat
-      ▼
-FastAPI Backend
-      │
-      │ OpenAI API
-      ▼
-AI Model
-      │
-      ▼
+User
+  │
+  ▼
+React + Vite (Vercel)
+  │ POST /chat
+  ▼
+FastAPI + Python (Render)
+  │ OpenAI API
+  ▼
+OpenAI Model
+  │
+  ▼
 AI Response
-      │
-      ▼
+  │
+  ▼
 React Chat Interface
 ```
 
-The project focuses on practical AI integration, rather than simply calling an AI API from the frontend.
+The project focuses on practical AI integration rather than calling an
+AI API directly from the frontend.
+
+---
+
+## 🌐 Live Demo
+
+### Frontend
+
+https://ai-customer-support-seven-omega.vercel.app/
+
+Deployed with **Vercel**.
+
+### Backend API
+
+https://ai-customer-support-blx6.onrender.com/
+
+Deployed with **Render**.
+
+### API Documentation
+
+https://ai-customer-support-blx6.onrender.com/docs
+
+> The frontend/backend production connection is configured. AI responses
+> require a valid OpenAI API key and available API credits.
 
 ---
 
@@ -56,47 +83,14 @@ The project focuses on practical AI integration, rather than simply calling an A
 - OpenAI API
 - OpenAI Python SDK
 
-### Development
+### Development & Deployment
 
 - Git
 - GitHub
 - VS Code
 - Environment Variables
-
----
-
-## 🚀 Current Status
-
-### Completed
-
-- [x] Project setup
-- [x] Git repository
-- [x] GitHub repository
-- [x] Python virtual environment
-- [x] FastAPI backend
-- [x] `GET /` health endpoint
-- [x] `POST /chat` endpoint
-- [x] Pydantic request validation
-- [x] CORS configuration
-- [x] React frontend
-- [x] React → FastAPI communication
-- [x] Local end-to-end request flow
-- [x] Environment variable setup
-- [x] API key protection with `.gitignore`
-- [x] Professional chatbot UI
-- [x] Conversation history
-- [x] Loading states
-- [x] Error handling
-- [x] Responsive design
-- [x] Auto-scroll
-- [x] Clear chat
-- [x] Environment variable setup
-
-### In Progress
-
-- [ ] Real OpenAI response integration
-- [ ] Customer-support system prompt
-- [ ] Deployment
+- Vercel
+- Render
 
 ---
 
@@ -104,11 +98,17 @@ The project focuses on practical AI integration, rather than simply calling an A
 
 ### React Frontend
 
-- Chat input
-- Send message
-- Display backend response
+- Chat input and send message
+- Conversation history
+- User/AI message bubbles
+- Loading and error states
+- Auto-scroll
+- Clear chat
+- Enter-to-send
+- Responsive layout
 - React state management
 - API communication using `fetch()`
+- Environment-based API configuration
 
 ### FastAPI Backend
 
@@ -118,52 +118,57 @@ The project focuses on practical AI integration, rather than simply calling an A
 - JSON request/response handling
 - Pydantic validation
 - CORS configuration
+- OpenAI server-side integration
+- Customer-support system instructions
+- API error handling
+- Graceful handling when an API key is not configured
 
 ---
 
-## 💬 Current Chat Flow
+## 📌 Current Project Status
 
-At the moment, the backend uses a temporary response so the complete application flow can be developed and tested without requiring OpenAI API credits.
+The application is fully deployed and operational.
 
-### Example Request
+The React frontend communicates with the FastAPI backend, which securely sends customer messages to the OpenAI API and returns AI-generated customer-support responses.
 
-```json
-{
-  "message": "Where is my order?"
-}
-```
+The production application includes:
 
-### Example Response
+- Secure server-side OpenAI API integration
+- Customer-support system instructions
+- Conversation history
+- Loading and error states
+- API error handling
+- Environment-based configuration
+- Vercel frontend deployment
+- Render backend deployment
+- Live AI-generated responses
 
-```json
-{
-  "reply": "You said: Where is my order?"
-}
-```
-
-The temporary response will later be replaced with a real OpenAI response.
+All API credentials are stored securely as backend environment variables and are never exposed to the frontend or committed to GitHub.
 
 ---
 
 ## 🔐 Security
 
-The OpenAI API key is **never stored in the source code**.
+Sensitive credentials are never committed to GitHub.
 
-The key is stored locally in:
+Local development uses environment variables stored in `.env` files,
+which are excluded through `.gitignore`. Production secrets are
+configured directly through the hosting provider.
 
-```text
-backend/.env
-```
-
-Example:
+### Backend
 
 ```env
 OPENAI_API_KEY=your_api_key_here
 ```
 
-The `.env` file is excluded from Git using `.gitignore`.
+### Frontend
 
-> ⚠️ Never commit an API key to GitHub or expose it in frontend JavaScript.
+```env
+VITE_API_URL=https://ai-customer-support-blx6.onrender.com
+```
+
+The OpenAI API key is only used by the FastAPI backend and is never
+exposed to the React frontend.
 
 ---
 
@@ -174,6 +179,7 @@ ai-customer-support/
 │
 ├── backend/
 │   ├── app.py
+│   ├── requirements.txt
 │   ├── .env
 │   └── venv/
 │
@@ -187,7 +193,8 @@ ai-customer-support/
 └── README.md
 ```
 
-> `.env`, `venv`, and `node_modules` are local-only files and should not be committed to Git.
+`.env`, `venv`, and `node_modules` are local-only and should not be
+committed to Git.
 
 ---
 
@@ -200,35 +207,16 @@ git clone https://github.com/AubreyMartin/ai-customer-support.git
 cd ai-customer-support
 ```
 
----
-
-## 🐍 Backend Setup
-
-Move into the backend:
+### 2. Backend Setup
 
 ```bash
 cd backend
-```
-
-Create a virtual environment:
-
-```bash
 python3 -m venv venv
-```
-
-Activate it:
-
-```bash
 source venv/bin/activate
+pip install -r requirements.txt
 ```
 
-Install dependencies:
-
-```bash
-pip install fastapi uvicorn openai python-dotenv
-```
-
-Create a `.env` file:
+Create `backend/.env`:
 
 ```env
 OPENAI_API_KEY=your_api_key_here
@@ -240,45 +228,30 @@ Start the backend:
 python -m uvicorn app:app --reload
 ```
 
-Backend:
+Local backend: `http://127.0.0.1:8000`
 
-```text
-http://127.0.0.1:8000
-```
+Interactive API docs: `http://127.0.0.1:8000/docs`
 
-Interactive API documentation:
-
-```text
-http://127.0.0.1:8000/docs
-```
-
----
-
-## ⚛️ Frontend Setup
-
-Open another terminal:
+### 3. Frontend Setup
 
 ```bash
 cd frontend
-```
-
-Install dependencies:
-
-```bash
 npm install
 ```
 
-Start the development server:
+Create `frontend/.env`:
+
+```env
+VITE_API_URL=http://127.0.0.1:8000
+```
+
+Start the frontend:
 
 ```bash
 npm run dev
 ```
 
-Frontend:
-
-```text
-http://localhost:5173
-```
+Local frontend: `http://localhost:5173`
 
 ---
 
@@ -288,21 +261,18 @@ http://localhost:5173
 
 Health check endpoint.
 
-#### Response
-
 ```json
 {
   "message": "AI Customer Support API is running!"
 }
 ```
 
----
-
 ### `POST /chat`
 
-Receives a customer message and returns a response.
+Receives a customer message and returns an AI response when the OpenAI
+API is configured.
 
-#### Request
+Example request:
 
 ```json
 {
@@ -310,23 +280,16 @@ Receives a customer message and returns a response.
 }
 ```
 
-#### Current Response
-
-```json
-{
-  "reply": "You said: Where is my order?"
-}
-```
+When the OpenAI API key is not configured, the backend returns a
+controlled service-unavailable response rather than crashing.
 
 ---
 
 ## 🧠 What This Project Demonstrates
 
-This project covers practical concepts including:
-
 - React state management
 - REST APIs
-- HTTP GET and POST
+- HTTP GET and POST requests
 - JSON request/response handling
 - `fetch()` API
 - FastAPI
@@ -337,13 +300,15 @@ This project covers practical concepts including:
 - API key security
 - Git/GitHub workflow
 - Frontend/backend architecture
-- AI API integration
+- Server-side AI API integration
+- Error handling
+- Full-stack deployment
 
 ---
 
 ## 🗺️ Roadmap
 
-### Phase 1 — Foundation
+### Phase 1 --- Foundation
 
 - [x] Project setup
 - [x] Git/GitHub
@@ -354,36 +319,69 @@ This project covers practical concepts including:
 - [x] Loading and error handling
 - [x] Conversation management
 
-### Phase 2 — AI Integration
+### Phase 2 --- AI Integration
 
-- [ ] OpenAI API integration
-- [ ] Server-side AI requests
-- [ ] AI response handling
+- [x] OpenAI API integration
+- [x] Server-side AI requests
+- [x] AI response handling
 - [x] Error handling
-- [ ] Secure API configuration
+- [x] Secure API configuration
 
-### Phase 3 — Chatbot Experience
+> OpenAI integration is implemented. A valid API key and available API
+> credits are required to enable live AI responses.
+
+### Phase 3 --- Chatbot Experience
 
 - [x] Conversation history
 - [x] User/AI message bubbles
 - [x] Loading indicator
-- [ ] System prompt
-- [ ] Customer-support context
+- [x] System prompt
+- [x] Customer-support context
 - [x] Clear conversation
 
-### Phase 4 — Production
+### Phase 4 --- Production
 
-- [ ] Responsive design
-- [ ] Testing
-- [ ] Deployment
-- [ ] Production environment variables
-- [ ] Live demo
+- [x] Responsive design
+- [x] Testing
+- [x] Deployment
+- [x] Production environment variables
+- [x] Live demo
+
+---
+
+## 🚀 Deployment
+
+### Frontend --- Vercel
+
+The React/Vite frontend is deployed on Vercel.
+
+```env
+VITE_API_URL=https://ai-customer-support-blx6.onrender.com
+```
+
+### Backend --- Render
+
+The FastAPI backend is deployed on Render.
+
+When available, configure the OpenAI API key as a Render environment
+variable:
+
+```env
+OPENAI_API_KEY=your_api_key_here
+```
+
+The API key must never be committed to the repository.
 
 ---
 
 ## 📸 Demo
 
-A live demo and screenshots will be added after the chatbot UI and deployment are completed.
+Live application: https://ai-customer-support-seven-omega.vercel.app/
+
+Backend health endpoint: https://ai-customer-support-blx6.onrender.com/
+
+Interactive backend API documentation:
+https://ai-customer-support-blx6.onrender.com/docs
 
 ---
 
@@ -391,12 +389,5 @@ A live demo and screenshots will be added after the chatbot UI and deployment ar
 
 **Aubrey Martin**
 
-Software engineer focused on React, JavaScript, and modern web application development.
-
----
-
-## 📌 Project Status
-
-🚧 **Actively developed**
-
-This repository documents the project from initial API setup through AI integration and deployment.
+Developer focused on React, JavaScript, modern web application
+development, API integration, and practical AI-powered applications.
