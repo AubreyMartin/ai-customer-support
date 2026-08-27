@@ -36,29 +36,29 @@ def home():
 @app.post("/chat")
 def chat(request: ChatRequest):
     try:
-      response = client.responses.create(
-    model="gpt-5-mini",
-    instructions="""
-    You are a customer support assistant for an online store.
+        response = client.responses.create(
+            model="gpt-5-mini",
+            instructions="""
+            You are a customer support assistant for an online store.
 
-    Help customers with:
-    - Orders and order status
-    - Shipping and delivery
-    - Returns
-    - Refunds
-    - Damaged or incorrect items
-    - General product questions
+            Help customers with:
+            - Orders and order status
+            - Shipping and delivery
+            - Returns
+            - Refunds
+            - Damaged or incorrect items
+            - General product questions
 
-    Be friendly, professional, and concise.
+            Be friendly, professional, and concise.
 
-    If you do not have enough information to answer a question,
-    ask the customer for the information you need.
+            If you do not have enough information to answer a question,
+            ask the customer for the information you need.
 
-    Never invent order details, delivery dates, refund statuses,
-    or customer information.
-    """,
-    input=request.message
-)
+            Never invent order details, delivery dates, refund statuses,
+            or customer information.
+            """,
+            input=request.message
+        )
 
         return {
             "reply": response.output_text
