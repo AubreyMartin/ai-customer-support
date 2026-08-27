@@ -1,4 +1,4 @@
-# 🤖 AI Customer Support Chatbot
+# ◈ AI Customer Support Chatbot
 
 A full-stack AI customer support chatbot built with **React, Python,
 FastAPI, and the OpenAI API**.
