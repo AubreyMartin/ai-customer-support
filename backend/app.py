@@ -1,14 +1,28 @@
 import os
+from contextlib import asynccontextmanager
+from typing import Optional
+from uuid import UUID
 
 from dotenv import load_dotenv
-from fastapi import FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from openai import OpenAI, RateLimitError, AuthenticationError, APIError
+from openai import APIError, AuthenticationError, OpenAI, RateLimitError
 from pydantic import BaseModel
+from sqlmodel import Session, select
+
+from database import create_db_and_tables, get_session
+from models import Conversation, Message, utc_now
 
 load_dotenv()
 
-app = FastAPI()
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    create_db_and_tables()
+    yield
+
+
+app = FastAPI(lifespan=lifespan)
 
 
 app.add_middleware(
@@ -22,9 +36,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
 class ChatRequest(BaseModel):
     message: str
+    conversation_id: Optional[UUID] = None
+
+
+class ChatResponse(BaseModel):
+    conversation_id: UUID
+    reply: str
 
 
 @app.get("/")
@@ -32,15 +51,58 @@ def home():
     return {"message": "AI Customer Support API is running!"}
 
 
-@app.post("/chat")
-def chat(request: ChatRequest):
+@app.post("/chat", response_model=ChatResponse)
+def chat(
+    request: ChatRequest,
+    session: Session = Depends(get_session),
+):
     try:
+        message_text = request.message.strip()
+
+        if not message_text:
+            raise HTTPException(
+                status_code=422,
+                detail="Message cannot be empty.",
+            )
+
+        # Continue an existing conversation or create a new one
+        if request.conversation_id:
+            conversation = session.get(
+                Conversation,
+                request.conversation_id,
+            )
+
+            if not conversation:
+                raise HTTPException(
+                    status_code=404,
+                    detail="Conversation not found.",
+                )
+        else:
+            conversation = Conversation(
+                title=message_text[:120],
+            )
+            session.add(conversation)
+            session.commit()
+            session.refresh(conversation)
+
+        # Save the user's message
+        user_message = Message(
+            conversation_id=conversation.id,
+            role="user",
+            content=message_text,
+        )
+
+        session.add(user_message)
+        conversation.updated_at = utc_now()
+        session.add(conversation)
+        session.commit()
+
         api_key = os.getenv("OPENAI_API_KEY")
 
         if not api_key:
             raise HTTPException(
                 status_code=503,
-                detail="AI service is not configured yet."
+                detail="AI service is not configured yet.",
             )
 
         client = OpenAI(api_key=api_key)
@@ -66,11 +128,24 @@ def chat(request: ChatRequest):
             Never invent order details, delivery dates, refund statuses,
             or customer information.
             """,
-            input=request.message
+            input=message_text,
         )
 
+        # Save the assistant's response
+        assistant_message = Message(
+            conversation_id=conversation.id,
+            role="assistant",
+            content=response.output_text,
+        )
+
+        session.add(assistant_message)
+        conversation.updated_at = utc_now()
+        session.add(conversation)
+        session.commit()
+
         return {
-            "reply": response.output_text
+            "conversation_id": conversation.id,
+            "reply": response.output_text,
         }
 
     except HTTPException:
@@ -79,19 +154,19 @@ def chat(request: ChatRequest):
     except RateLimitError:
         raise HTTPException(
             status_code=429,
-            detail="AI service is currently unavailable due to API quota."
+            detail="AI service is currently unavailable due to API quota.",
         )
 
     except AuthenticationError:
         raise HTTPException(
             status_code=401,
-            detail="AI service authentication failed."
+            detail="AI service authentication failed.",
         )
 
     except APIError:
         raise HTTPException(
             status_code=502,
-            detail="AI service is temporarily unavailable."
+            detail="AI service is temporarily unavailable.",
         )
 
     except Exception as error:
@@ -99,5 +174,5 @@ def chat(request: ChatRequest):
 
         raise HTTPException(
             status_code=500,
-            detail="Something went wrong while processing your message."
+            detail="Something went wrong while processing your message.",
         )
