@@ -21,4 +21,6 @@ tqdm==4.70.0
 typing-inspection==0.4.2
 typing_extensions==4.16.0
 uvicorn==0.39.0
-pip freeze > requirements.txt
+psycopg[binary]==3.2.13
+SQLAlchemy==2.0.52
+sqlmodel==0.0.34
