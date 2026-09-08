@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import "./App.css";
-
+import { Show, SignInButton, SignUpButton, UserButton } from "@clerk/react";
 function App() {
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState([]);
@@ -77,6 +77,20 @@ function App() {
         <button onClick={clearChat} className="clear-button">
           Clear Chat
         </button>
+
+        <Show when="signed-out">
+          <SignInButton mode="modal">
+            <button>Sign in</button>
+          </SignInButton>
+
+          <SignUpButton mode="modal">
+            <button>Create account</button>
+          </SignUpButton>
+        </Show>
+
+        <Show when="signed-in">
+          <UserButton showName />
+        </Show>
       </header>
 
       <main className="messages">
