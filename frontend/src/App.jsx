@@ -1,7 +1,10 @@
 import { useEffect, useRef, useState } from "react";
+import { SignInButton, SignUpButton, UserButton, useAuth } from "@clerk/react";
 import "./App.css";
-import { Show, SignInButton, SignUpButton, UserButton } from "@clerk/react";
+
 function App() {
+  const { isLoaded, isSignedIn } = useAuth();
+
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -12,6 +15,34 @@ function App() {
       behavior: "smooth",
     });
   }, [messages]);
+
+  if (!isLoaded) {
+    return <p>Loading...</p>;
+  }
+
+  if (!isSignedIn) {
+    return (
+      <div className="chat-app">
+        <main className="messages">
+          <div className="message assistant">
+            <div className="message-bubble">
+              Please sign in to access your private conversations.
+            </div>
+          </div>
+
+          <div className="auth-actions">
+            <SignInButton mode="modal">
+              <button>Sign in</button>
+            </SignInButton>
+
+            <SignUpButton mode="modal">
+              <button>Create account</button>
+            </SignUpButton>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   const sendMessage = async () => {
     if (!message.trim() || isLoading) return;
@@ -65,32 +96,23 @@ function App() {
       setIsLoading(false);
     }
   };
+
   const clearChat = () => {
     setMessages([]);
   };
+
   return (
     <div className="chat-app">
       <header className="chat-header">
-        <h1> ◈ AI Customer Support</h1>
+        <h1>◈ AI Customer Support</h1>
+
         <div className="status">● Online</div>
 
         <button onClick={clearChat} className="clear-button">
           Clear Chat
         </button>
 
-        <Show when="signed-out">
-          <SignInButton mode="modal">
-            <button>Sign in</button>
-          </SignInButton>
-
-          <SignUpButton mode="modal">
-            <button>Create account</button>
-          </SignUpButton>
-        </Show>
-
-        <Show when="signed-in">
-          <UserButton showName />
-        </Show>
+        <UserButton showName />
       </header>
 
       <main className="messages">
@@ -102,9 +124,9 @@ function App() {
           </div>
         )}
 
-        {messages.map((msg, index) => (
-          <div key={index} className={`message ${msg.role}`}>
-            <div className="message-bubble">{msg.content}</div>
+        {messages.map((currentMessage, index) => (
+          <div key={index} className={`message ${currentMessage.role}`}>
+            <div className="message-bubble">{currentMessage.content}</div>
           </div>
         ))}
 
@@ -113,6 +135,7 @@ function App() {
             <div className="message-bubble">Typing...</div>
           </div>
         )}
+
         <div ref={messagesEndRef} />
       </main>
 
