@@ -3,11 +3,13 @@ import { SignInButton, SignUpButton, UserButton, useAuth } from "@clerk/react";
 import "./App.css";
 
 function App() {
-  const { isLoaded, isSignedIn } = useAuth();
+  const { isLoaded, isSignedIn, getToken } = useAuth();
 
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [conversationId, setConversationId] = useState(null);
+
   const messagesEndRef = useRef(null);
 
   useEffect(() => {
@@ -58,13 +60,17 @@ function App() {
     setIsLoading(true);
 
     try {
+      const token = await getToken();
+
       const response = await fetch(`${import.meta.env.VITE_API_URL}/chat`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           message: userMessage.content,
+          conversation_id: conversationId,
         }),
       });
 
@@ -73,6 +79,8 @@ function App() {
       }
 
       const data = await response.json();
+
+      setConversationId(data.conversation_id);
 
       const assistantMessage = {
         role: "assistant",
@@ -99,6 +107,7 @@ function App() {
 
   const clearChat = () => {
     setMessages([]);
+    setConversationId(null);
   };
 
   return (

@@ -8,8 +8,9 @@ from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from openai import APIError, AuthenticationError, OpenAI, RateLimitError
 from pydantic import BaseModel
-from sqlmodel import Session, select
+from sqlmodel import Session
 
+from auth import get_current_user_id
 from database import create_db_and_tables, get_session
 from models import Conversation, Message, utc_now
 
@@ -36,6 +37,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 class ChatRequest(BaseModel):
     message: str
     conversation_id: Optional[UUID] = None
@@ -54,6 +56,7 @@ def home():
 @app.post("/chat", response_model=ChatResponse)
 def chat(
     request: ChatRequest,
+    user_id: str = Depends(get_current_user_id),
     session: Session = Depends(get_session),
 ):
     try:
@@ -77,8 +80,16 @@ def chat(
                     status_code=404,
                     detail="Conversation not found.",
                 )
+
+            # Prevent users from accessing another user's conversation
+            if conversation.user_id != user_id:
+                raise HTTPException(
+                    status_code=404,
+                    detail="Conversation not found.",
+                )
         else:
             conversation = Conversation(
+                user_id=user_id,
                 title=message_text[:120],
             )
             session.add(conversation)

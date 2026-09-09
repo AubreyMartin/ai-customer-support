@@ -24,3 +24,4 @@ uvicorn==0.39.0
 psycopg[binary]==3.2.13
 SQLAlchemy==2.0.52
 sqlmodel==0.0.34
+clerk-backend-api==4.2.0
