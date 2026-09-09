@@ -1,475 +1,268 @@
-◈ AI Customer Support Chatbot
+# AI Customer Support Chatbot
 
-A full-stack AI customer support chatbot built with React, FastAPI,
-OpenAI, and PostgreSQL.
+A full-stack customer-support chatbot built with React, FastAPI, OpenAI,  
+PostgreSQL, and Clerk authentication.
 
-This project demonstrates how a modern frontend application can
-communicate with a Python backend, securely integrate with an AI
-service, and persist conversations in a hosted SQL database.
+Customers authenticate securely, send requests through a protected API, and  
+have their conversations stored against their own user account in PostgreSQL.
 
-🚧 The application is deployed. Live AI-generated responses require a
-valid OpenAI API key with available API credits.
+> The application is deployed. Live AI responses require an OpenAI API key  
+> with available API credits.
 
-🎯 Project Goal
+## Live Demo
 
-User
-│
-▼
+- **Frontend:** [https://ai-customer-support-seven-omega.vercel.app/](https://ai-customer-support-seven-omega.vercel.app/)
+- **Backend:** [https://ai-customer-support-blx6.onrender.com/](https://ai-customer-support-blx6.onrender.com/)
+- **API documentation:** [https://ai-customer-support-blx6.onrender.com/docs](https://ai-customer-support-blx6.onrender.com/docs)
+
+## Architecture
+
+```
+Customer
+   |
+   v
 React + Vite (Vercel)
-│ POST /chat
-▼
-FastAPI + Python (Render)
-├──────────────► PostgreSQL (Neon)
-│ Stores conversations
-│ and messages
-│
-└──► OpenAI API ──► AI Response
-▼
-React Chat Interface
-
-The project focuses on practical AI integration rather than calling an
-AI API directly from the frontend.
-
-🌐 Live Demo
-
-Frontend
-
-https://ai-customer-support-seven-omega.vercel.app/
-
-Deployed with Vercel.
-
-Backend API
-
-https://ai-customer-support-blx6.onrender.com/
-
-Deployed with Render.
-
-API Documentation
-
-https://ai-customer-support-blx6.onrender.com/docs
-
-The frontend/backend production connection is configured. AI responses
-require a valid OpenAI API key and available API credits.
-
-🛠️ Tech Stack
-
-Frontend
-
-React
-
-JavaScript
-
-Vite
-
-HTML
-
-CSS
-
-Backend
-
-Python
-
-FastAPI
-
-Uvicorn
-
-Pydantic
-
-SQLModel
-
-SQLAlchemy
-
-Psycopg
-
-Database
-
-PostgreSQL
-
-Neon hosted database
-
-Conversation and message persistence
-
-AI
-
-OpenAI API
-
-OpenAI Python SDK
-
-Development & Deployment
-
-Git
-
-GitHub
-
-VS Code
-
-Environment Variables
-
-Vercel
-
-Render
-
-✨ Current Features
-
-React Frontend
-
-Chat input and send message
-
-Conversation history
-
-User/AI message bubbles
-
-Loading and error states
-
-Auto-scroll
-
-Clear chat
-
-Enter-to-send
-
-Responsive layout
-
-React state management
-
-API communication using fetch()
-
-Environment-based API configuration
-
-FastAPI Backend
-
-REST API
-
-GET / health check
-
-POST /chat
-
-JSON request/response handling
-
-Pydantic validation
-
-CORS configuration
-
-OpenAI server-side integration
-
-Customer-support system instructions
-
-API error handling
-
-Graceful handling when an API key is not configured
-
-Creates and continues conversations using UUIDs
-
-Stores user and assistant messages in PostgreSQL
-
-Automatically creates database tables during application startup
-
-📌 Current Project Status
-
-The frontend and backend are deployed. PostgreSQL connectivity and user-message
-persistence have been verified against the hosted Neon database.
-
-The OpenAI integration is implemented, but live assistant responses are currently
-disabled because the API account requires available credits. Assistant-message
-persistence will be verified after credits are enabled.
-
-The production application includes:
-
-Secure server-side OpenAI API integration
-
-Customer-support system instructions
-
-Conversation history
-
-Loading and error states
-
-API error handling
-
-Environment-based configuration
-
-Vercel frontend deployment
-
-Render backend deployment
-
-Hosted PostgreSQL integration
-
-Persistent conversation and message tables
-
-All API credentials are stored securely as backend environment variables and are never exposed to the frontend or committed to GitHub.
-
-🔐 Security
-
-Sensitive credentials are never committed to GitHub.
-
-Local development uses environment variables stored in .env files,
-which are excluded through .gitignore. Production secrets are
-configured directly through the hosting provider.
-
-Backend
-
-OPENAI_API_KEY=your_api_key_here
-DATABASE_URL=postgresql://user:password@host/database?sslmode=require
-
-Frontend
-
-VITE_API_URL=https://ai-customer-support-blx6.onrender.com
-
-The OpenAI API key is only used by the FastAPI backend and is never
-exposed to the React frontend.
-
-📁 Project Structure
-
+   |-- Clerk email-link / Google authentication
+   |-- Authenticated POST /chat request
+   v
+FastAPI (Render)
+   |-- Verifies the Clerk session token
+   |-- Enforces conversation ownership
+   |-- Stores user-scoped chats in PostgreSQL (Neon)
+   |-- Sends customer questions to the OpenAI API
+   v
+AI response returned to the React interface
+```
+
+The OpenAI key and Clerk secret key remain on the backend and are never  
+exposed to the browser.
+
+## Features
+
+### Authentication and security
+
+- Passwordless email-link authentication with Clerk
+- Google sign-in
+- Signed-out users cannot access the chatbot
+- User account management and sign-out
+- Clerk session tokens attached to API requests
+- Server-side token verification in FastAPI
+- PostgreSQL conversations associated with Clerk user IDs
+- Ownership checks prevent access to another user's conversation
+- Secrets stored in environment variables
+
+### React frontend
+
+- Responsive customer-support chat interface
+- User and assistant message bubbles
+- Loading and error states
+- Enter-to-send and automatic scrolling
+- Clear-chat action
+- Conversation UUID reuse during the active session
+- Environment-based backend URL
+
+### FastAPI backend
+
+- Public health-check endpoint
+- Protected `POST /chat` endpoint
+- Pydantic request and response validation
+- Clerk authentication dependency
+- CORS configuration for local and deployed frontends
+- Server-side OpenAI integration
+- Customer-support system instructions
+- Controlled authentication, quota, and API error responses
+
+### PostgreSQL persistence
+
+- Hosted Neon PostgreSQL database
+- SQLModel and SQLAlchemy integration
+- Separate conversation and message tables
+- One-to-many conversation/message relationship
+- UUID conversation identifiers
+- Clerk user ID stored on every new conversation
+- User and assistant message persistence
+
+## Technology Stack
+
+| Layer          | Technologies                                               |
+| -------------- | ---------------------------------------------------------- |
+| Frontend       | React, JavaScript, Vite, HTML, CSS                         |
+| Authentication | Clerk React, email links, Google OAuth, JWT session tokens |
+| Backend        | Python, FastAPI, Uvicorn, Pydantic                         |
+| AI             | OpenAI API, OpenAI Python SDK                              |
+| Database       | PostgreSQL, Neon, SQLModel, SQLAlchemy, Psycopg            |
+| Deployment     | Vercel, Render, GitHub                                     |
+
+## Project Structure
+
+```
 ai-customer-support/
-│
 ├── backend/
-│ ├── app.py
-│ ├── database.py
-│ ├── models.py
-│ ├── requirements.txt
-│ ├── .env
-│ └── venv/
-│
+│   ├── app.py             # FastAPI routes and chat workflow
+│   ├── auth.py            # Clerk token verification
+│   ├── database.py        # PostgreSQL engine and sessions
+│   ├── models.py          # Conversation and message models
+│   └── requirements.txt
 ├── frontend/
-│ ├── src/
-│ ├── public/
-│ ├── package.json
-│ └── ...
-│
+│   ├── src/
+│   │   ├── App.jsx        # Authenticated chat interface
+│   │   ├── App.css
+│   │   └── main.jsx       # ClerkProvider and React entry point
+│   ├── public/
+│   └── package.json
 ├── .gitignore
 └── README.md
+```
 
-.env, venv, and node_modules are local-only and should not be
-committed to Git.
+Local `.env` files, virtual environments, and `node_modules` are excluded  
+from Git.
 
-⚙️ Getting Started
+## Local Setup
 
-1. Clone the Repository
+### 1. Clone the repository
 
+```
 git clone https://github.com/AubreyMartin/ai-customer-support.git
 cd ai-customer-support
+```
 
-2. Backend Setup
+### 2. Configure the backend
 
+```
 cd backend
 python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
+```
 
-Create backend/.env:
+Create `backend/.env`:
 
-OPENAI_API_KEY=your_api_key_here
+```
 DATABASE_URL=postgresql://user:password@host/database?sslmode=require
+OPENAI_API_KEY=your_openai_api_key
+CLERK_SECRET_KEY=your_clerk_secret_key
+CLERK_AUTHORIZED_PARTIES=http://localhost:5173
+```
 
-Start the backend:
+Start FastAPI:
 
+```
 python -m uvicorn app:app --reload
+```
 
-Local backend: http://127.0.0.1:8000
+### 3. Configure the frontend
 
-Interactive API docs: http://127.0.0.1:8000/docs
-
-3. Frontend Setup
-
-cd frontend
+```
+cd ../frontend
 npm install
+```
 
-Create frontend/.env:
+Create `frontend/.env`:
 
+```
 VITE_API_URL=http://127.0.0.1:8000
+VITE_CLERK_PUBLISHABLE_KEY=your_clerk_publishable_key
+```
 
-Start the frontend:
+Start Vite:
 
+```
 npm run dev
+```
 
-Local frontend: http://localhost:5173
+The frontend runs at `http://localhost:5173`; FastAPI runs at  
+`http://127.0.0.1:8000`.
 
-🔌 API
+## API
 
-GET /
+### `GET /`
 
-Health check endpoint.
+Public health check:
 
+```
 {
-"message": "AI Customer Support API is running!"
+  "message": "AI Customer Support API is running!"
 }
+```
 
-POST /chat
+### `POST /chat`
 
-Receives a customer message and returns an AI response when the OpenAI
-API is configured.
+Requires a Clerk session token:
+
+```
+Authorization: Bearer <session-token>
+Content-Type: application/json
+```
 
 Example request:
 
+```
 {
-"message": "Where is my order?",
-"conversation_id": null
+  "message": "Where is my order?",
+  "conversation_id": null
 }
+```
 
-The first request can omit conversation_id. The API creates a conversation and
-returns its UUID:
+Example response:
 
+```
 {
-"conversation_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-"reply": "Please share your order number so I can help you check it."
+  "conversation_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+  "reply": "Please share your order number so I can help you check it."
 }
-
-Send the returned UUID with later messages to continue the same conversation.
-
-When the OpenAI API key is not configured, the backend returns a
-controlled service-unavailable response rather than crashing.
-
-🧠 What This Project Demonstrates
-
-React state management
-
-REST APIs
-
-HTTP GET and POST requests
-
-JSON request/response handling
-
-fetch() API
-
-FastAPI
-
-Pydantic validation
-
-CORS
-
-Python virtual environments
-
-Environment variables
-
-API key security
-
-Git/GitHub workflow
-
-Frontend/backend architecture
-
-Server-side AI API integration
-
-PostgreSQL schema design
-
-SQLModel and SQLAlchemy
-
-One-to-many database relationships
-
-Persistent chat storage
-
-Error handling
-
-Full-stack deployment
-
-🗺️ Roadmap
-
-Phase 1 --- Foundation
-
-Project setup
-
-Git/GitHub
-
-FastAPI backend
-
-React frontend
-
-Frontend/backend communication
-
-Customer support chat interface
-
-Loading and error handling
-
-Conversation management
-
-Phase 2 --- AI Integration
-
-OpenAI API integration
-
-Server-side AI requests
-
-AI response handling
-
-Error handling
-
-Secure API configuration
-
-OpenAI integration is implemented. A valid API key and available API
-credits are required to enable live AI responses.
-
-Phase 3 --- Chatbot Experience
-
-Conversation history
-
-User/AI message bubbles
-
-Loading indicator
-
-System prompt
-
-Customer-support context
-
-Clear conversation
-
-Phase 4 --- Production
-
-Responsive design
-
-Testing
-
-Deployment
-
-Production environment variables
-
-Live demo
-
-Phase 5 --- PostgreSQL Persistence
-
-Create a hosted Neon PostgreSQL database
-
-Connect FastAPI using SQLModel and Psycopg
-
-Create conversations and messages tables
-
-Store user messages with conversation UUIDs
-
-Implement assistant-message persistence
-
-Verify assistant persistence with active OpenAI API credits
-
-Reuse the conversation UUID from the React frontend
-
-Load stored chat history from the database
-
-🚀 Deployment
-
-Frontend --- Vercel
-
-The React/Vite frontend is deployed on Vercel.
-
-VITE_API_URL=https://ai-customer-support-blx6.onrender.com
-
-Backend --- Render
-
-The FastAPI backend is deployed on Render.
-
-When available, configure the OpenAI API key as a Render environment
-variable:
-
-OPENAI_API_KEY=your_api_key_here
-DATABASE_URL=postgresql://user:password@host/database?sslmode=require
-
-The API key must never be committed to the repository.
-
-📸 Demo
-
-Live application: https://ai-customer-support-seven-omega.vercel.app/
-
-Backend health endpoint: https://ai-customer-support-blx6.onrender.com/
-
-Interactive backend API documentation:
-https://ai-customer-support-blx6.onrender.com/docs
-
-👨‍💻 Author
-
-Aubrey Martin
-
-Developer focused on React, JavaScript, modern web application
-development, API integration, and practical AI-powered applications.
+```
+
+The first request creates a conversation owned by the authenticated Clerk  
+user. Later requests send the returned UUID to continue that conversation.  
+FastAPI rejects attempts to continue conversations owned by another user.
+
+## Verified Functionality
+
+- React and FastAPI communicate locally and in deployed environments
+- Clerk email-link and Google authentication work locally
+- Signed-out chatbot access is blocked
+- FastAPI verifies Clerk session tokens
+- Authenticated conversations store a Clerk user ID in Neon
+- User messages persist when the OpenAI API returns a quota error
+- Frontend and backend production builds complete successfully
+
+## Current Limitations
+
+- Live AI responses require available OpenAI API credits
+- Saved conversation history is not yet displayed after a page reload
+- Final production Clerk verification and multi-user testing remain
+
+## Roadmap
+
+- Build the React chat interface and FastAPI API
+- Integrate the OpenAI API server-side
+- Deploy the frontend and backend
+- Connect hosted PostgreSQL
+- Persist conversations and messages
+- Add Clerk email-link and Google authentication
+- Protect the frontend and FastAPI chat endpoint
+- Store conversations per authenticated user
+- Enforce conversation ownership
+- Complete production Clerk verification
+- Test isolation with two user accounts
+- Load saved conversation history in the frontend
+- Verify assistant-message persistence with active OpenAI credits
+
+## What This Project Demonstrates
+
+- React state management and authenticated UI rendering
+- REST API design and `fetch()` integration
+- JWT authentication across separate frontend and backend services
+- FastAPI dependencies and Pydantic validation
+- PostgreSQL schema design and one-to-many relationships
+- User-scoped data access and authorization checks
+- Secure server-side AI integration
+- Environment-based configuration
+- Full-stack deployment with Vercel, Render, and Neon
+
+## Author
+
+**Aubrey Martin**
+
+Developer focused on React, JavaScript, modern web applications, API  
+integration, and practical AI-powered products.
