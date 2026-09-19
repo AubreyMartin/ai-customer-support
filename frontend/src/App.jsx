@@ -2,6 +2,27 @@ import { useEffect, useRef, useState } from "react";
 import { SignInButton, SignUpButton, UserButton, useAuth } from "@clerk/react";
 import "./App.css";
 
+function formatConversationLabel(conversation) {
+  if (conversation.title && conversation.title.trim()) {
+    return conversation.title;
+  }
+  return "New conversation";
+}
+
+function formatConversationDate(isoString) {
+  const date = new Date(isoString);
+  if (Number.isNaN(date.getTime())) return "";
+
+  const now = new Date();
+  const isToday = date.toDateString() === now.toDateString();
+
+  if (isToday) {
+    return date.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+  }
+
+  return date.toLocaleDateString([], { month: "short", day: "numeric" });
+}
+
 function App() {
   const { isLoaded, isSignedIn, getToken } = useAuth();
 
@@ -9,6 +30,11 @@ function App() {
   const [messages, setMessages] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [conversationId, setConversationId] = useState(null);
+
+  const [conversations, setConversations] = useState([]);
+  const [isSidebarLoading, setIsSidebarLoading] = useState(false);
+  const [isConversationLoading, setIsConversationLoading] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const messagesEndRef = useRef(null);
 
@@ -18,33 +44,148 @@ function App() {
     });
   }, [messages]);
 
+  const fetchConversations = async () => {
+    const token = await getToken();
+
+    const response = await fetch(`${import.meta.env.VITE_API_URL}/conversations`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to load conversations");
+    }
+
+    return response.json();
+  };
+
+  const fetchConversationMessages = async (id) => {
+    const token = await getToken();
+
+    const response = await fetch(
+      `${import.meta.env.VITE_API_URL}/conversations/${id}/messages`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      },
+    );
+
+    if (!response.ok) {
+      throw new Error("Failed to load conversation messages");
+    }
+
+    return response.json();
+  };
+
+  // On sign-in: load the sidebar list, then open the most recent
+  // conversation so a page reload picks up where the user left off.
+  useEffect(() => {
+    if (!isSignedIn) return;
+
+    let isCancelled = false;
+
+    const loadInitialState = async () => {
+      setIsSidebarLoading(true);
+
+      try {
+        const list = await fetchConversations();
+        if (isCancelled) return;
+
+        setConversations(list);
+
+        if (list.length > 0) {
+          setIsConversationLoading(true);
+          const history = await fetchConversationMessages(list[0].id);
+          if (isCancelled) return;
+
+          setConversationId(list[0].id);
+          setMessages(
+            history.map((entry) => ({
+              role: entry.role,
+              content: entry.content,
+            })),
+          );
+        }
+      } catch (error) {
+        console.error("Error loading conversation history:", error);
+      } finally {
+        if (!isCancelled) {
+          setIsSidebarLoading(false);
+          setIsConversationLoading(false);
+        }
+      }
+    };
+
+    loadInitialState();
+
+    return () => {
+      isCancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isSignedIn]);
+
   if (!isLoaded) {
     return <p>Loading...</p>;
   }
 
   if (!isSignedIn) {
     return (
-      <div className="chat-app">
-        <main className="messages">
-          <div className="message assistant">
-            <div className="message-bubble">
-              Please sign in to access your private conversations.
+      <div className="app-layout">
+        <div className="chat-app">
+          <main className="messages">
+            <div className="message assistant">
+              <div className="message-bubble">
+                Please sign in to access your private conversations.
+              </div>
             </div>
-          </div>
 
-          <div className="auth-actions">
-            <SignInButton mode="modal">
-              <button>Sign in</button>
-            </SignInButton>
+            <div className="auth-actions">
+              <SignInButton mode="modal">
+                <button>Sign in</button>
+              </SignInButton>
 
-            <SignUpButton mode="modal">
-              <button>Create account</button>
-            </SignUpButton>
-          </div>
-        </main>
+              <SignUpButton mode="modal">
+                <button>Create account</button>
+              </SignUpButton>
+            </div>
+          </main>
+        </div>
       </div>
     );
   }
+
+  const openConversation = async (id) => {
+    if (id === conversationId) {
+      setIsSidebarOpen(false);
+      return;
+    }
+
+    setIsConversationLoading(true);
+    setIsSidebarOpen(false);
+
+    try {
+      const history = await fetchConversationMessages(id);
+      setConversationId(id);
+      setMessages(
+        history.map((entry) => ({
+          role: entry.role,
+          content: entry.content,
+        })),
+      );
+    } catch (error) {
+      console.error("Error loading conversation:", error);
+    } finally {
+      setIsConversationLoading(false);
+    }
+  };
+
+  const startNewChat = () => {
+    setMessages([]);
+    setConversationId(null);
+    setIsSidebarOpen(false);
+  };
 
   const sendMessage = async () => {
     if (!message.trim() || isLoading) return;
@@ -58,6 +199,8 @@ function App() {
 
     setMessage("");
     setIsLoading(true);
+
+    const isNewConversation = !conversationId;
 
     try {
       const token = await getToken();
@@ -91,6 +234,18 @@ function App() {
         ...previousMessages,
         assistantMessage,
       ]);
+
+      // Refresh the sidebar so a brand-new conversation appears, and so
+      // existing conversations re-sort by their new "last updated" time.
+      try {
+        const list = await fetchConversations();
+        setConversations(list);
+        if (isNewConversation) {
+          setConversationId(data.conversation_id);
+        }
+      } catch (refreshError) {
+        console.error("Error refreshing conversation list:", refreshError);
+      }
     } catch (error) {
       console.error("Error:", error);
 
@@ -106,64 +261,164 @@ function App() {
   };
 
   const clearChat = () => {
-    setMessages([]);
-    setConversationId(null);
+    startNewChat();
   };
 
   return (
-    <div className="chat-app">
-      <header className="chat-header">
-        <h1>◈ AI Customer Support</h1>
+    <div className="app-layout">
+      {isSidebarOpen && (
+        <div
+          className="sidebar-backdrop"
+          onClick={() => setIsSidebarOpen(false)}
+        />
+      )}
 
-        <div className="status">● Online</div>
+      <aside className={`sidebar ${isSidebarOpen ? "open" : ""}`}>
+        <div className="sidebar-header">
+          <span>Your chats</span>
+          <button
+            className="sidebar-close"
+            onClick={() => setIsSidebarOpen(false)}
+            aria-label="Close chat list"
+          >
+            <span className="sidebar-close-cross" />
+          </button>
+        </div>
 
-        <button onClick={clearChat} className="clear-button">
-          Clear Chat
+        <button className="new-chat-button" onClick={startNewChat}>
+          <span className="new-chat-plus" />
+          New chat
         </button>
 
-        <UserButton showName />
-      </header>
+        <div className="conversation-list">
+          {conversations.length > 0 && (
+            <div className="conversation-list-label">Recent</div>
+          )}
 
-      <main className="messages">
-        {messages.length === 0 && (
-          <div className="message assistant">
-            <div className="message-bubble">
-              Hi! 👋 How can I help you today?
+          {isSidebarLoading && (
+            <div className="conversation-list-empty">Loading chats...</div>
+          )}
+
+          {!isSidebarLoading && conversations.length === 0 && (
+            <div className="conversation-list-empty">
+              No conversations yet
+            </div>
+          )}
+
+          {conversations.map((conversation) => (
+            <button
+              key={conversation.id}
+              className={`conversation-item ${
+                conversation.id === conversationId ? "active" : ""
+              }`}
+              onClick={() => openConversation(conversation.id)}
+            >
+              <span className="conversation-title">
+                {formatConversationLabel(conversation)}
+              </span>
+              <span className="conversation-date">
+                {formatConversationDate(conversation.updated_at)}
+              </span>
+            </button>
+          ))}
+        </div>
+      </aside>
+
+      <div className="chat-app">
+        <header className="chat-header">
+          <div className="header-row header-row-top">
+            <div className="header-brand">
+              <button
+                className="sidebar-toggle"
+                onClick={() => setIsSidebarOpen(true)}
+                aria-label="Show chat list"
+              >
+                <span className="sidebar-toggle-bars" />
+              </button>
+
+              <span className="logo-badge">◈</span>
+              <h1>AI Customer Support</h1>
+            </div>
+
+            <div className="header-user">
+              <UserButton />
             </div>
           </div>
-        )}
 
-        {messages.map((currentMessage, index) => (
-          <div key={index} className={`message ${currentMessage.role}`}>
-            <div className="message-bubble">{currentMessage.content}</div>
+          <div className="header-row header-row-bottom">
+            <div className="status-pill">
+              <span className="status-dot" />
+              Online
+            </div>
+
+            <button onClick={clearChat} className="clear-button">
+              Clear Chat
+            </button>
           </div>
-        ))}
+        </header>
 
-        {isLoading && (
-          <div className="message assistant">
-            <div className="message-bubble">Typing...</div>
-          </div>
-        )}
+        <main className="messages">
+          {isConversationLoading && (
+            <div className="message assistant">
+              <div className="message-bubble">
+                Loading your conversation...
+              </div>
+            </div>
+          )}
 
-        <div ref={messagesEndRef} />
-      </main>
+          {!isConversationLoading && messages.length === 0 && (
+            <div className="message assistant">
+              <span className="message-avatar">AI</span>
+              <div className="message-bubble">
+                Hi! 👋 How can I help you today?
+              </div>
+            </div>
+          )}
 
-      <div className="input-area">
-        <input
-          type="text"
-          placeholder="Ask a question..."
-          value={message}
-          onChange={(event) => setMessage(event.target.value)}
-          onKeyDown={(event) => {
-            if (event.key === "Enter") {
-              sendMessage();
-            }
-          }}
-        />
+          {!isConversationLoading &&
+            messages.map((currentMessage, index) => (
+              <div
+                key={index}
+                className={`message ${currentMessage.role}`}
+              >
+                {currentMessage.role === "assistant" && (
+                  <span className="message-avatar">AI</span>
+                )}
+                <div className="message-bubble">{currentMessage.content}</div>
+              </div>
+            ))}
 
-        <button onClick={sendMessage} disabled={isLoading}>
-          {isLoading ? "Sending..." : "Send"}
-        </button>
+          {isLoading && (
+            <div className="message assistant">
+              <span className="message-avatar">AI</span>
+              <div className="message-bubble typing-bubble">
+                <span className="typing-dot" />
+                <span className="typing-dot" />
+                <span className="typing-dot" />
+              </div>
+            </div>
+          )}
+
+          <div ref={messagesEndRef} />
+        </main>
+
+        <div className="input-area">
+          <input
+            type="text"
+            placeholder="Ask a question..."
+            value={message}
+            onChange={(event) => setMessage(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") {
+                sendMessage();
+              }
+            }}
+          />
+
+          <button onClick={sendMessage} disabled={isLoading}>
+            {isLoading ? "Sending..." : "Send"}
+          </button>
+        </div>
       </div>
     </div>
   );

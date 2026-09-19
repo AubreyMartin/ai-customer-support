@@ -24,6 +24,7 @@ Customer
 React + Vite (Vercel)
    |-- Clerk email-link / Google authentication
    |-- Authenticated POST /chat request
+   |-- Authenticated GET /conversations and /conversations/{id}/messages
    v
 FastAPI (Render)
    |-- Verifies the Clerk session token
@@ -54,17 +55,26 @@ exposed to the browser.
 ### React frontend
 
 - Responsive customer-support chat interface
-- User and assistant message bubbles
+- Sidebar listing every past conversation, most recently updated first
+- Click any conversation in the sidebar to load its full message history
+- "New chat" action that starts a fresh conversation without losing old ones
+- Conversation history automatically reloads on sign-in, so a page refresh
+  picks up right where the user left off
+- Collapsible sidebar drawer on mobile, opened from a menu button in the header
+- User and assistant message bubbles with assistant avatars
+- Animated typing indicator while waiting on a reply
 - Loading and error states
 - Enter-to-send and automatic scrolling
 - Clear-chat action
-- Conversation UUID reuse during the active session
 - Environment-based backend URL
 
 ### FastAPI backend
 
 - Public health-check endpoint
 - Protected `POST /chat` endpoint
+- Protected `GET /conversations` endpoint listing the caller's own conversations
+- Protected `GET /conversations/{id}/messages` endpoint returning one
+  conversation's messages, scoped to its owner
 - Pydantic request and response validation
 - Clerk authentication dependency
 - CORS configuration for local and deployed frontends
@@ -105,7 +115,7 @@ ai-customer-support/
 │   └── requirements.txt
 ├── frontend/
 │   ├── src/
-│   │   ├── App.jsx        # Authenticated chat interface
+│   │   ├── App.jsx        # Authenticated chat interface and sidebar
 │   │   ├── App.css
 │   │   └── main.jsx       # ClerkProvider and React entry point
 │   ├── public/
@@ -185,6 +195,36 @@ Public health check:
 }
 ```
 
+### `GET /conversations`
+
+Requires a Clerk session token. Returns the authenticated user's own  
+conversations, most recently updated first:
+
+```
+[
+  {
+    "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+    "title": "Where is my order?",
+    "created_at": "2026-09-19T10:03:00+00:00",
+    "updated_at": "2026-09-19T10:04:12+00:00"
+  }
+]
+```
+
+### `GET /conversations/{conversation_id}/messages`
+
+Requires a Clerk session token. Returns the ordered messages for one  
+conversation. A conversation that doesn't exist, or belongs to a different  
+Clerk user, returns a 404 either way, so callers can't probe for other  
+users' conversation IDs:
+
+```
+[
+  { "role": "user", "content": "Where is my order?", "created_at": "..." },
+  { "role": "assistant", "content": "Please share your order number...", "created_at": "..." }
+]
+```
+
 ### `POST /chat`
 
 Requires a Clerk session token:
@@ -225,11 +265,12 @@ FastAPI rejects attempts to continue conversations owned by another user.
 - Authenticated conversations store a Clerk user ID in Neon
 - User messages persist when the OpenAI API returns a quota error
 - Frontend and backend production builds complete successfully
+- Conversation history reloads automatically on sign-in and page refresh
+- Sidebar lists and switches between a user's own conversations only
 
 ## Current Limitations
 
 - Live AI responses require available OpenAI API credits
-- Saved conversation history is not yet displayed after a page reload
 - Final production Clerk verification and multi-user testing remain
 
 ## Roadmap
@@ -246,6 +287,7 @@ FastAPI rejects attempts to continue conversations owned by another user.
 - Complete production Clerk verification
 - Test isolation with two user accounts
 - Load saved conversation history in the frontend
+- Add a sidebar for browsing and switching between past conversations
 - Verify assistant-message persistence with active OpenAI credits
 
 ## What This Project Demonstrates

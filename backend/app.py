@@ -1,6 +1,6 @@
 import os
 from contextlib import asynccontextmanager
-from typing import Optional
+from typing import List, Optional
 from uuid import UUID
 
 from dotenv import load_dotenv
@@ -8,7 +8,7 @@ from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from openai import APIError, AuthenticationError, OpenAI, RateLimitError
 from pydantic import BaseModel
-from sqlmodel import Session
+from sqlmodel import Session, select
 
 from auth import get_current_user_id
 from database import create_db_and_tables, get_session
@@ -48,9 +48,84 @@ class ChatResponse(BaseModel):
     reply: str
 
 
+class ConversationSummary(BaseModel):
+    id: UUID
+    title: Optional[str] = None
+    created_at: str
+    updated_at: str
+
+
+class MessageOut(BaseModel):
+    role: str
+    content: str
+    created_at: str
+
+
 @app.get("/")
 def home():
     return {"message": "AI Customer Support API is running!"}
+
+
+@app.get("/conversations", response_model=List[ConversationSummary])
+def list_conversations(
+    user_id: str = Depends(get_current_user_id),
+    session: Session = Depends(get_session),
+):
+    """Return this user's own conversations, most recently updated first."""
+
+    conversations = session.exec(
+        select(Conversation)
+        .where(Conversation.user_id == user_id)
+        .order_by(Conversation.updated_at.desc())
+    ).all()
+
+    return [
+        ConversationSummary(
+            id=conversation.id,
+            title=conversation.title,
+            created_at=conversation.created_at.isoformat(),
+            updated_at=conversation.updated_at.isoformat(),
+        )
+        for conversation in conversations
+    ]
+
+
+@app.get(
+    "/conversations/{conversation_id}/messages",
+    response_model=List[MessageOut],
+)
+def get_conversation_messages(
+    conversation_id: UUID,
+    user_id: str = Depends(get_current_user_id),
+    session: Session = Depends(get_session),
+):
+    """Return the messages for one conversation, if it belongs to the caller."""
+
+    conversation = session.get(Conversation, conversation_id)
+
+    # Ownership check: a conversation that doesn't exist or that belongs
+    # to a different Clerk user is reported the same way, so callers can't
+    # probe for other users' conversation ids.
+    if not conversation or conversation.user_id != user_id:
+        raise HTTPException(
+            status_code=404,
+            detail="Conversation not found.",
+        )
+
+    messages = session.exec(
+        select(Message)
+        .where(Message.conversation_id == conversation_id)
+        .order_by(Message.created_at.asc())
+    ).all()
+
+    return [
+        MessageOut(
+            role=message.role,
+            content=message.content,
+            created_at=message.created_at.isoformat(),
+        )
+        for message in messages
+    ]
 
 
 @app.post("/chat", response_model=ChatResponse)
